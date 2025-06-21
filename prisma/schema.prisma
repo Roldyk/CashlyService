@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Categoria {
+  categoria_id      Int            @id @default(autoincrement())
+  categoria_nom     String         @db.VarChar(100)
+  categoria_descrip String?        @db.Text
+  Gastos            Gastos[]
+  Ingresos          Ingresos[]
+  Metas             Metas[]
+  Presupuestos      Presupuestos[]
+}
+
+model Gastos {
+  gasto_id           Int           @id @default(autoincrement())
+  usuario_id         Int
+  pres_id            Int?
+  categoria_id       Int?
+  periodo_id         Int?
+  gasto_nombre       String        @db.VarChar(100)
+  gasto_monto        Decimal       @db.Decimal(10, 2)
+  gasto_fecha        DateTime?     @db.Date
+  gasto_frecuencia   Boolean?
+  inicio_recurrencia DateTime?     @db.Date
+  fin_recurrencia    DateTime?     @db.Date
+  Categoria          Categoria?    @relation(fields: [categoria_id], references: [categoria_id], onDelete: Restrict, map: "fk_gastos_categoria")
+  Periodo            Periodo?      @relation(fields: [periodo_id], references: [periodo_id], onDelete: Restrict, map: "fk_gastos_periodo")
+  Presupuestos       Presupuestos? @relation(fields: [pres_id], references: [pres_id], onDelete: Cascade, map: "fk_gastos_presupuesto")
+  Usuarios           Usuarios      @relation(fields: [usuario_id], references: [usuario_id], onDelete: Cascade, map: "fk_gastos_usuario")
+
+  @@index([categoria_id], map: "fk_gastos_categoria")
+  @@index([periodo_id], map: "fk_gastos_periodo")
+  @@index([pres_id], map: "fk_gastos_presupuesto")
+  @@index([usuario_id], map: "fk_gastos_usuario")
+}
+
+model Ingresos {
+  ingreso_id         Int        @id @default(autoincrement())
+  usuario_id         Int
+  ingreso_nombre     String     @db.VarChar(100)
+  ingreso_monto      Decimal    @db.Decimal(10, 2)
+  ingreso_fecha      DateTime?  @db.Date
+  periodo_id         Int?
+  categoria_id       Int?
+  ingreso_frecuencia Boolean?
+  inicio_recurrencia DateTime?  @db.Date
+  fin_recurrencia    DateTime?  @db.Date
+  Categoria          Categoria? @relation(fields: [categoria_id], references: [categoria_id], onDelete: Cascade, map: "fk_categoria_id")
+  Periodo            Periodo?   @relation(fields: [periodo_id], references: [periodo_id], onDelete: Cascade, map: "fk_periodo_id")
+  Usuarios           Usuarios   @relation(fields: [usuario_id], references: [usuario_id], onDelete: Cascade, map: "fk_usuario_id")
+
+  @@index([categoria_id], map: "fk_categoria_id")
+  @@index([periodo_id], map: "fk_periodo_id")
+  @@index([usuario_id], map: "fk_usuario_id")
+}
+
+model Metas {
+  meta_id            Int        @id @default(autoincrement())
+  usuario_id         Int
+  categoria_id       Int?
+  periodo_id         Int
+  meta_nombre        String     @db.VarChar(100)
+  meta_descripcion   String?    @db.Text
+  meta_monto_inicial Decimal    @db.Decimal(10, 2)
+  meta_monto_ult     Decimal?   @db.Decimal(10, 2)
+  meta_es_activo     Boolean
+  meta_fecha_inicio  DateTime?  @db.Date
+  meta_fecha_fin     DateTime?  @db.Date
+  Categoria          Categoria? @relation(fields: [categoria_id], references: [categoria_id], onDelete: Restrict, map: "fk_categorias_metas")
+  Periodo            Periodo    @relation(fields: [periodo_id], references: [periodo_id], map: "fk_periodo_metas")
+  Usuarios           Usuarios   @relation(fields: [usuario_id], references: [usuario_id], onDelete: Cascade, map: "fk_usuario_metas")
+
+  @@index([categoria_id], map: "fk_categorias_metas")
+  @@index([periodo_id], map: "fk_periodo_metas")
+  @@index([usuario_id], map: "fk_usuario_metas")
+}
+
+model Periodo {
+  periodo_id   Int            @id @default(autoincrement())
+  periodo_nom  String?        @db.VarChar(100)
+  Gastos       Gastos[]
+  Ingresos     Ingresos[]
+  Metas        Metas[]
+  Presupuestos Presupuestos[]
+}
+
+model Presupuestos {
+  pres_id            Int        @id @default(autoincrement())
+  usuario_id         Int
+  pres_nombre        String     @db.VarChar(100)
+  pres_monto_inicial Decimal    @db.Decimal(10, 2)
+  pres_monto_ult     Decimal    @db.Decimal(10, 2)
+  categoria_id       Int?
+  periodo_id         Int?
+  es_activo          Boolean
+  fecha_creacion     DateTime   @db.Date
+  fecha_ult_act      DateTime   @db.Date
+  inicio_recurrencia DateTime?  @db.Date
+  fin_recurrencia    DateTime?  @db.Date
+  Gastos             Gastos[]
+  Categoria          Categoria? @relation(fields: [categoria_id], references: [categoria_id], onDelete: Restrict, map: "fk_presupuestos_categoria")
+  Periodo            Periodo?   @relation(fields: [periodo_id], references: [periodo_id], onDelete: Restrict, map: "fk_presupuestos_periodo")
+  Usuarios           Usuarios   @relation(fields: [usuario_id], references: [usuario_id], onDelete: Cascade, map: "fk_presupuestos_usuario")
+
+  @@index([categoria_id], map: "fk_presupuestos_categoria")
+  @@index([periodo_id], map: "fk_presupuestos_periodo")
+  @@index([usuario_id], map: "fk_presupuestos_usuario")
+}
+
+model Usuarios {
+  usuario_id               Int            @id @default(autoincrement())
+  usuario_nombre           String         @db.VarChar(100)
+  usuario_apellido         String         @db.VarChar(100)
+  usuario_fecha_nacimiento Date       @db.Date
+  usuario_correo           String         @unique(map: "uniq_correo") @db.VarChar(150)
+  usuario_password         String         @db.VarChar(255)
+  usuario_pais             String         @db.VarChar(100)
+  moneda                   String?        @db.VarChar(10)
+  Gastos                   Gastos[]
+  Ingresos                 Ingresos[]
+  Metas                    Metas[]
+  Presupuestos             Presupuestos[]
+}
