@@ -40,12 +40,12 @@ presupuestoRouter.post(
       if (!pres_nombre)
         return res.status(400).json({ message: "Campo faltante: pres_nombre" });
 
-      if (pres_monto_inicial === null)
+      if (pres_monto_inicial === null || typeof pres_monto_inicial !== "number")
         return res
           .status(400)
           .json({ message: "Campo faltante: pres_monto_inicial" });
 
-      if (pres_monto_ult === null)
+      if (pres_monto_ult === null || typeof pres_monto_ult !== "number")
         return res
           .status(400)
           .json({ message: "Campo faltante: pres_monto_ult" });
@@ -57,8 +57,8 @@ presupuestoRouter.post(
         data: {
           usuario_id: req.userId!,
           pres_nombre,
-          pres_monto_inicial: new prisma.$Decimal(pres_monto_inicial),
-          pres_monto_ult: new prisma.$Decimal(pres_monto_ult),
+          pres_monto_inicial: pres_monto_inicial,
+          pres_monto_ult: pres_monto_ult,
           categoria_id: categoria_id ?? null,
           periodo_id: periodo_id ?? null,
           es_activo,
@@ -73,7 +73,8 @@ presupuestoRouter.post(
 
       return res.status(201).json(nuevoPresupuesto);
     } catch (error) {
-      return res.status(500).json({ message: "Internal server error" });
+      console.error(error);
+      return res.status(500).json({ message: "Internal server error", error });
     }
   }
 );
@@ -101,12 +102,12 @@ presupuestoRouter.put(
       if (!pres_nombre)
         return res.status(400).json({ message: "Campo faltante: pres_nombre" });
 
-      if (pres_monto_inicial === null)
+      if (pres_monto_inicial === null || typeof pres_monto_inicial !== "number")
         return res
           .status(400)
           .json({ message: "Campo faltante: pres_monto_inicial" });
 
-      if (pres_monto_ult === null)
+      if (pres_monto_ult === null || typeof pres_monto_ult !== "number")
         return res
           .status(400)
           .json({ message: "Campo faltante: pres_monto_ult" });
@@ -118,8 +119,8 @@ presupuestoRouter.put(
         data: {
           usuario_id: req.userId!,
           pres_nombre,
-          pres_monto_inicial: new prisma.$Decimal(pres_monto_inicial),
-          pres_monto_ult: new prisma.$Decimal(pres_monto_ult),
+          pres_monto_inicial: pres_monto_inicial,
+          pres_monto_ult: pres_monto_ult,
           categoria_id: categoria_id ?? null,
           periodo_id: periodo_id ?? null,
           es_activo,
