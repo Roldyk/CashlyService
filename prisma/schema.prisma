@@ -118,7 +118,7 @@ model Usuarios {
   usuario_id               Int            @id @default(autoincrement())
   usuario_nombre           String         @db.VarChar(100)
   usuario_apellido         String         @db.VarChar(100)
-  usuario_fecha_nacimiento Date       @db.Date
+  usuario_fecha_nacimiento DateTime       @db.Date
   usuario_correo           String         @unique(map: "uniq_correo") @db.VarChar(150)
   usuario_password         String         @db.VarChar(255)
   usuario_pais             String         @db.VarChar(100)
