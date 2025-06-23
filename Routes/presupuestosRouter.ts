@@ -114,7 +114,7 @@ presupuestoRouter.put(
       if (es_activo === null)
         return res.status(400).json({ message: "Campo faltante: es_activo" });
 
-      const nuevoPresupuesto = await prisma.presupuestos.update({
+      const presupuesto = await prisma.presupuestos.update({
         data: {
           usuario_id: req.userId!,
           pres_nombre,
@@ -132,7 +132,7 @@ presupuestoRouter.put(
         where: { usuario_id: req.userId, pres_id: pres_id },
       });
 
-      return res.status(200).json(nuevoPresupuesto);
+      return res.status(200).json(presupuesto);
     } catch (error) {
       return res.status(500).json({ message: "Internal server error" });
     }
