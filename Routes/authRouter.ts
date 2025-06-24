@@ -75,30 +75,6 @@ authRouter.post("/login", async (req, res) => {
   }
 });
 
-authRouter.get("/profile", async (req: Request, res: Response) => {
-  const token = req.headers.authorization?.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({ message: "Token is required" });
-  }
-
-  try {
-    const decoded = jwt.verify(token, secret) as { userId: number };
-    const user = await prisma.usuarios.findUnique({
-      where: { usuario_id: decoded.userId },
-    });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    return res.status(200).json(user);
-  } catch (error) {
-    console.error("Error fetching profile:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-});
-
 authRouter.get("/profile/:id", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const userId = parseInt(req.params.id, 10);
