@@ -4,6 +4,7 @@ import { PrismaClient } from '../generated/prisma';
 import jwt from "jsonwebtoken";
 const prisma = new PrismaClient();
 const secret = process.env.JWT_SECRET || "defaultsecretkey";
+import {authenticateToken, AuthRequest} from "../middleware/authMiddleware";
 const authRouter: Router = express.Router();
 
 authRouter.post("/register", async (req, res) => {
@@ -74,6 +75,58 @@ authRouter.post("/login", async (req, res) => {
   }
 });
 
+authRouter.get("/profile", async (req: Request, res: Response) => {
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ message: "Token is required" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, secret) as { userId: number };
+    const user = await prisma.usuarios.findUnique({
+      where: { usuario_id: decoded.userId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json(user);
+  } catch (error) {
+    console.error("Error fetching profile:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+authRouter.get("/profile/:id", authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = parseInt(req.params.id, 10);
+    if (isNaN(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+    const user = await prisma.usuarios.findUnique({
+      where: { usuario_id: userId },
+    });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const Profile = {
+      usuario_id: user.usuario_id,
+      usuario_nombre: user.usuario_nombre,
+      usuario_apellido: user.usuario_apellido,
+      usuario_correo: user.usuario_correo,
+      usuario_pais: user.usuario_pais,
+      moneda: user.moneda,  
+      usuario_fecha_nacimiento: user.usuario_fecha_nacimiento,
+    }
+    return res.status(200).json(Profile);
+
+  } catch (error) {
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
 
 export default authRouter;
 
