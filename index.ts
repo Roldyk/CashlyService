@@ -3,6 +3,7 @@ import authRouter from "./Routes/authRouter";
 import presupuestoRouter from "./Routes/presupuestosRouter";
 import gastosRouter from "./Routes/gastosRouter";
 import periodoRouter from "./Routes/periodoRouter";
+import metasRouter from "./Routes/metasRouter";
 
 const app = express();
 const port = 3000;
@@ -12,8 +13,9 @@ app.use("/auth", authRouter);
 app.use("/presupuesto", presupuestoRouter);
 app.use("/gastos", gastosRouter);
 app.use("/periodo", periodoRouter);
+app.use("/metas", metasRouter);
 
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
   res.send("Hello World!");
 });
 
