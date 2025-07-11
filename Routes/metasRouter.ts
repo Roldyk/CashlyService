@@ -55,11 +55,12 @@ metasRouter.get(
       );
 
       const porcentajeCompleto = (totalMetaUlt / totalMetasInicial) * 100;
+      const now = new Date();
 
       return res.status(200).json({
         amount: totalMetasInicial.toFixed(2),
         percentageCompleted: porcentajeCompleto.toFixed(2),
-        date: Date.now(),
+        date: now.toISOString(),
       });
     } catch (error) {
       return res.status(500).json({ message: "Internal server error" });
