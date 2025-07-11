@@ -12,8 +12,20 @@ metasRouter.get(
     try {
       const metas = await prisma.metas.findMany({
         where: { usuario_id: req.userId },
+        include: {
+          Categoria: {
+            select: { categoria_nom: true },
+          },
+        },
       });
-      return res.status(200).json(metas);
+
+      const metasConCategoria = metas.map((meta) => ({
+        ...meta,
+        categoria_nom: meta.Categoria?.categoria_nom || null,
+        Categoria: undefined, // quitamos el objeto anidado si no lo necesitas
+      }));
+
+      return res.status(200).json(metasConCategoria);
     } catch (error) {
       return res.status(500).json({ message: "Internal server error" });
     }
