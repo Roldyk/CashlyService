@@ -21,6 +21,53 @@ metasRouter.get(
 );
 
 metasRouter.get(
+  "/detail",
+  authenticateToken,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const metas = await prisma.metas.findMany({
+        where: {
+          usuario_id: req.userId,
+          meta_es_activo: true,
+        },
+        select: {
+          meta_monto_inicial: true,
+          meta_monto_ult: true,
+          meta_fecha_inicio: true,
+          meta_fecha_fin: true,
+        },
+      });
+
+      if (metas.length === 0) {
+        return res
+          .status(404)
+          .json({ message: "No metas found for this user" });
+      }
+
+      const totalMetaUlt = metas.reduce(
+        (sum, meta) => sum + Number(meta.meta_monto_ult),
+        0
+      );
+
+      const totalMetasInicial = metas.reduce(
+        (sum, meta) => sum + Number(meta.meta_monto_inicial),
+        0
+      );
+
+      const porcentajeCompleto = (totalMetaUlt / totalMetasInicial) * 100;
+
+      return res.status(200).json({
+        amount: totalMetasInicial.toFixed(2),
+        percentageCompleted: porcentajeCompleto.toFixed(2),
+        date: Date.now(),
+      });
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
+
+metasRouter.get(
   "/:id",
   authenticateToken,
   async (req: AuthRequest, res: Response) => {
