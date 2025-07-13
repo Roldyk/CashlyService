@@ -12,10 +12,15 @@ model Categoria {
   categoria_id      Int            @id @default(autoincrement())
   categoria_nom     String         @db.VarChar(100)
   categoria_descrip String?        @db.Text
+  owner_id          Int?
+  icon_ref          String         @default("category") @db.VarChar(100)
+  Usuarios          Usuarios?      @relation(fields: [owner_id], references: [usuario_id], onUpdate: NoAction, map: "fk_categoria_owner")
   Gastos            Gastos[]
   Ingresos          Ingresos[]
   Metas             Metas[]
   Presupuestos      Presupuestos[]
+
+  @@index([owner_id], map: "fk_categoria_owner")
 }
 
 model Gastos {
@@ -123,6 +128,7 @@ model Usuarios {
   usuario_password         String         @db.VarChar(255)
   usuario_pais             String         @db.VarChar(100)
   moneda                   String?        @db.VarChar(10)
+  Categoria                Categoria[]
   Gastos                   Gastos[]
   Ingresos                 Ingresos[]
   Metas                    Metas[]
