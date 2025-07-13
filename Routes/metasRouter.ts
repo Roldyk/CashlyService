@@ -12,8 +12,68 @@ metasRouter.get(
     try {
       const metas = await prisma.metas.findMany({
         where: { usuario_id: req.userId },
+        include: {
+          Categoria: {
+            select: { categoria_nom: true },
+          },
+        },
       });
-      return res.status(200).json(metas);
+
+      const metasConCategoria = metas.map((meta) => ({
+        ...meta,
+        categoria_nom: meta.Categoria?.categoria_nom || null,
+        Categoria: undefined, // quitamos el objeto anidado si no lo necesitas
+      }));
+
+      return res.status(200).json(metasConCategoria);
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
+
+metasRouter.get(
+  "/detail",
+  authenticateToken,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const metas = await prisma.metas.findMany({
+        where: {
+          usuario_id: req.userId,
+          meta_es_activo: true,
+        },
+        select: {
+          meta_monto_inicial: true,
+          meta_monto_ult: true,
+          meta_fecha_inicio: true,
+          meta_fecha_fin: true,
+        },
+      });
+
+      if (metas.length === 0) {
+        return res
+          .status(404)
+          .json({ message: "No metas found for this user" });
+      }
+
+      const totalMetaUlt = metas.reduce(
+        (sum, meta) => sum + Number(meta.meta_monto_ult),
+        0
+      );
+
+      const totalMetasInicial = metas.reduce(
+        (sum, meta) => sum + Number(meta.meta_monto_inicial),
+        0
+      );
+
+      const porcentajeCompleto = (totalMetaUlt / totalMetasInicial) * 100;
+      const now = new Date();
+
+      return res.status(200).json({
+        amount: totalMetasInicial.toFixed(2),
+        percentageCompleted: porcentajeCompleto.toFixed(2),
+        date: now.toISOString(),
+      });
     } catch (error) {
       return res.status(500).json({ message: "Internal server error" });
     }

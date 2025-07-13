@@ -6,6 +6,7 @@ import { startOfMonth, endOfMonth, subMonths } from "date-fns";
 const prisma = new PrismaClient();
 const dashBoardDataRouter: Router = express.Router();
 
+// dashboard
 dashBoardDataRouter.get(
   "/",
   authenticateToken,
@@ -18,9 +19,9 @@ dashBoardDataRouter.get(
     const startPrevious = startOfMonth(subMonths(now, 1));
     const endPrevious = endOfMonth(subMonths(now, 1));
 
-    try {
-      const userId = req.userId;
+    const userId = req.userId;
 
+    try {
       // Ingresos
       const ingresosActual = await prisma.ingresos.aggregate({
         where: {
@@ -113,6 +114,88 @@ dashBoardDataRouter.get(
         amountInGoal,
         goalAmount,
       });
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
+
+// chart
+dashBoardDataRouter.get(
+  "/chart",
+  authenticateToken,
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.userId;
+
+    if (typeof userId !== "number" || isNaN(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    try {
+      const ingresos = await prisma.ingresos.groupBy({
+        by: ["ingreso_fecha"],
+        where: {
+          usuario_id: userId,
+          ingreso_fecha: {
+            not: null,
+          },
+        },
+        _sum: {
+          ingreso_monto: true,
+        },
+        orderBy: {
+          ingreso_fecha: "asc",
+        },
+      });
+
+      const chartData = ingresos.map((entry) => ({
+        day: entry.ingreso_fecha?.toISOString(),
+        amount: Number(entry._sum.ingreso_monto ?? 0),
+      }));
+
+      return res.json(chartData);
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
+
+// incomelist
+dashBoardDataRouter.get(
+  "/income",
+  authenticateToken,
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.userId;
+
+    if (typeof userId !== "number" || isNaN(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    try {
+      const ingresos = await prisma.ingresos.findMany({
+        where: {
+          usuario_id: userId,
+          ingreso_fecha: {
+            not: null,
+          },
+        },
+        select: {
+          ingreso_frecuencia: true,
+          ingreso_fecha: true,
+          ingreso_monto: true,
+        },
+        orderBy: {
+          ingreso_fecha: "desc",
+        },
+      });
+
+      const response = ingresos.map((ingreso) => ({
+        frequency: ingreso.ingreso_frecuencia == true ? "Recurrente" : "Único",
+        date: ingreso.ingreso_fecha?.toISOString(),
+        amount: Number(ingreso.ingreso_monto),
+      }));
+
+      return res.status(200).json(response);
     } catch (error) {
       return res.status(500).json({ message: "Internal server error" });
     }
