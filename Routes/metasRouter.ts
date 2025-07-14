@@ -106,34 +106,42 @@ metasRouter.post(
   "/",
   authenticateToken,
   async (req: AuthRequest, res: Response) => {
+    const {
+      categoria_id,
+      periodo_id,
+      meta_nombre,
+      meta_descripcion,
+      meta_monto_inicial,
+      meta_monto_ult,
+      meta_es_activo,
+      meta_fecha_inicio,
+      meta_fecha_fin,
+    } = req.body;
+
+    if (isNaN(periodo_id))
+      return res.status(400).json({ message: "Campo faltante: periodo_id" });
+
+    if (!meta_nombre)
+      return res.status(400).json({ message: "Campo faltante: meta_nombre" });
+
+    if (isNaN(meta_monto_inicial))
+      return res
+        .status(400)
+        .json({ message: "Campo faltante: meta_monto_inicial" });
+
+    if (meta_es_activo === null)
+      return res
+        .status(400)
+        .json({ message: "Campo faltante: meta_es_activo" });
+
     try {
-      const {
-        categoria_id,
-        periodo_id,
-        meta_nombre,
-        meta_descripcion,
-        meta_monto_inicial,
-        meta_monto_ult,
-        meta_es_activo,
-        meta_fecha_inicio,
-        meta_fecha_fin,
-      } = req.body;
+      const categoria = await prisma.categoria.findUnique({
+        where: { categoria_id: categoria_id },
+      });
 
-      if (isNaN(periodo_id))
-        return res.status(400).json({ message: "Campo faltante: periodo_id" });
-
-      if (!meta_nombre)
-        return res.status(400).json({ message: "Campo faltante: meta_nombre" });
-
-      if (isNaN(meta_monto_inicial))
-        return res
-          .status(400)
-          .json({ message: "Campo faltante: meta_monto_inicial" });
-
-      if (meta_es_activo === null)
-        return res
-          .status(400)
-          .json({ message: "Campo faltante: meta_es_activo" });
+      if (!categoria) {
+        return res.status(400).json({ message: "La categoría no existe" });
+      }
 
       const nuevaMeta = await prisma.metas.create({
         data: {
@@ -142,8 +150,8 @@ metasRouter.post(
           periodo_id,
           meta_nombre,
           meta_descripcion,
-          meta_monto_inicial,
-          meta_monto_ult,
+          meta_monto_inicial: Number(meta_monto_inicial),
+          meta_monto_ult: Number(meta_monto_ult),
           meta_es_activo,
           meta_fecha_inicio: meta_fecha_inicio
             ? new Date(meta_fecha_fin)
@@ -154,7 +162,9 @@ metasRouter.post(
 
       return res.status(201).json(nuevaMeta);
     } catch (error) {
-      return res.status(500).json({ message: "Internal server error" });
+      return res
+        .status(500)
+        .json({ message: "Internal server error", error: error });
     }
   }
 );
