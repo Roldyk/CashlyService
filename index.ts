@@ -5,7 +5,7 @@ import gastosRouter from "./Routes/gastosRouter";
 import periodoRouter from "./Routes/periodoRouter";
 import metasRouter from "./Routes/metasRouter";
 import dashBoardDataRouter from "./Routes/dashBoardRouter";
-import  categoriaRouter from "./Routes/categoriaRouter";  
+import categoriaRouter from "./Routes/categoriaRouter";  
 
 const app = express();
 const port = 3000;
