@@ -18,6 +18,7 @@ app.use("/gastos", gastosRouter);
 app.use("/periodo", periodoRouter);
 app.use("/metas", metasRouter);
 app.use("/dashboard-data", dashBoardDataRouter);
+app.use("/categoria", categoriaRouter);
 
 app.get("/", (_req, res) => {
   res.send("Hello World!");

@@ -1,103 +1,79 @@
-import express, { Response, Router } from "express";
-import { PrismaClient } from "../generated/prisma";
+import express, { Router, Response, NextFunction } from "express";
+import { PrismaClient } from "@prisma/client";
 import { authenticateToken, AuthRequest } from "../middleware/authMiddleware";
 
 const prisma = new PrismaClient();
-const categoriaRouter: Router = express.Router();
+export const categoriaRouter: Router = express.Router();
 
-categoriaRouter.get(
-  "/",
-  authenticateToken,
-  async (_req: AuthRequest, res: Response) => {
-    try {
-      const categorias = await prisma.categoria.findMany();
-      return res.status(200).json(categorias);
-    } catch (error) {
-      return res.status(500).json({ message: "Internal server error" });
-    }
+categoriaRouter.use(authenticateToken);
+
+categoriaRouter.post("/", async (req: AuthRequest, res: Response) => {
+  const userId = req.userId!;
+  const { nombre, descripcion, iconRef } = req.body;
+
+  try {
+    const nueva = await prisma.categoria.create({
+      data: {
+        categoria_nom: nombre,
+        categoria_descrip: descripcion,
+        icon_ref: iconRef,
+        owner_id: userId,
+      },
+    });
+    return res.status(201).json(nueva);
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: "Error al crear la categoría" });
   }
-);
+});
 
-categoriaRouter.post(
-  "/",
-  authenticateToken,
-  async (req: AuthRequest, res: Response) => {
-    const { categoria_nom, categoria_descrip } = req.body;
+categoriaRouter.get("/", async (req: AuthRequest, res: Response) => {
+  const userId = req.userId!;
 
-    if (categoria_nom === null || categoria_nom.trim() === "")
-      return res.status(400).json({ message: "Campo faltante: categoria_nom" });
-
-    try {
-      const nuevaCategoria = await prisma.categoria.create({
-        data: { categoria_nom, categoria_descrip },
-      });
-
-      return res.status(201).json(nuevaCategoria);
-    } catch (error) {
-      return res.status(500).json({ message: "Internal server error" });
-    }
+  try {
+    const lista = await prisma.categoria.findMany({
+      where: {
+        OR: [
+          { owner_id: null }, // globales
+          { owner_id: userId }, // propias
+        ],
+      },
+      orderBy: { categoria_nom: "asc" },
+    });
+    return res.json(lista);
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: "Error al obtener categorías" });
   }
-);
+});
 
-categoriaRouter.put(
-  "/",
-  authenticateToken,
-  async (req: AuthRequest, res: Response) => {
-    const { categoria_id, categoria_nom, categoria_descrip } = req.body;
+categoriaRouter.delete("/:id", async (req: AuthRequest, res: Response) => {
+  const userId = req.userId!;
+  const id = Number(req.params.id);
 
-    if (isNaN(categoria_id) || categoria_id === null)
-      return res.status(400).json({ message: "Campo faltante: categoria_id" });
-
-    if (categoria_nom === null || categoria_nom.trim() === "")
-      return res.status(400).json({ message: "Campo faltante: categoria_nom" });
-
-    try {
-      const categoria = await prisma.categoria.update({
-        data: {
-          categoria_nom,
-          categoria_descrip,
-        },
-        where: {
-          categoria_id,
-        },
-      });
-
-      return res.status(201).json(categoria);
-    } catch (error) {
-      return res.status(500).json({ message: "Internal server error" });
+  try {
+    const cat = await prisma.categoria.findUnique({
+      where: { categoria_id: id },
+    });
+    if (!cat) {
+      return res.status(404).json({ error: "Categoría no encontrada" });
     }
-  }
-);
-
-categoriaRouter.delete(
-  "/",
-  authenticateToken,
-  async (req: AuthRequest, res: Response) => {
-    const { categoria_id } = req.body;
-
-    if (!categoria_id)
-      return res.status(400).json({ message: "Campo faltante: categoria_id" });
-
-    try {
-      const categoria = await prisma.categoria.findUnique({
-        where: { categoria_id },
-      });
-
-      if (!categoria) {
-        return res
-          .status(404)
-          .json({ message: "categoria no encontrado o acceso denegado" });
-      }
-
-      const categoriaEliminado = await prisma.categoria.delete({
-        where: { categoria_id },
-      });
-
-      return res.status(200).json(categoriaEliminado);
-    } catch (error) {
-      return res.status(500).json({ message: "Internal server error" });
+    if (cat.owner_id === null) {
+      return res
+        .status(403)
+        .json({ error: "No puedes eliminar categorías globales" });
     }
-  }
-);
+    if (cat.owner_id !== userId) {
+      return res
+        .status(403)
+        .json({ error: "No tienes permiso para eliminar esta categoría" });
+    }
 
+    await prisma.categoria.delete({ where: { categoria_id: id } });
+    return res.sendStatus(204);
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: "Error al eliminar la categoría" });
+  }
+});
 export default categoriaRouter;
