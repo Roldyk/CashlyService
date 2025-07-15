@@ -84,6 +84,14 @@ gastosRouter.post(
             .status(404)
             .json({ message: `Presupuesto con pres_id=${pres_id} no existe` });
         }
+
+        const editarPresupuesto = await prisma.presupuestos.update({
+          data: {
+            pres_monto_ult:
+              Number(presupuesto.pres_monto_ult) + Number(gasto_monto),
+          },
+          where: { pres_id, usuario_id: req.userId },
+        });
       }
 
       const nuevoGasto = await prisma.gastos.create({
