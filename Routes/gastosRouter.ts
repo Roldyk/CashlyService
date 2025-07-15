@@ -75,6 +75,17 @@ gastosRouter.post(
       if (typeof gasto_monto !== "number" || isNaN(gasto_monto))
         return res.status(400).json({ message: "Campo faltante: gasto_monto" });
 
+      if (pres_id) {
+        const presupuesto = await prisma.presupuestos.findFirst({
+          where: { usuario_id: req.userId, pres_id },
+        });
+        if (!presupuesto) {
+          return res
+            .status(404)
+            .json({ message: `Presupuesto con pres_id=${pres_id} no existe` });
+        }
+      }
+
       const nuevoGasto = await prisma.gastos.create({
         data: {
           usuario_id: req.userId!,
