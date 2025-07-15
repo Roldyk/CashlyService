@@ -14,6 +14,12 @@ gastosRouter.get(
     const monthNumber = Number(month);
     const yearNumber = Number(year);
 
+    if (!isNaN(monthNumber) && isNaN(yearNumber)) {
+      return res
+        .status(400)
+        .json({ message: "Campo faltante como query param: year" });
+    }
+
     let dateFilter = {};
 
     if (
