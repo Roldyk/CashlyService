@@ -9,10 +9,11 @@ gastosRouter.get(
   "/",
   authenticateToken,
   async (req: AuthRequest, res: Response) => {
-    const { month, year } = req.query;
+    const { month, year, pres_id } = req.query;
 
     const monthNumber = Number(month);
     const yearNumber = Number(year);
+    const presIdNumber = Number(pres_id);
 
     if (!isNaN(monthNumber) && isNaN(yearNumber)) {
       return res
@@ -20,7 +21,9 @@ gastosRouter.get(
         .json({ message: "Campo faltante como query param: year" });
     }
 
-    let dateFilter = {};
+    const whereClause: any = {
+      usuario_id: req.userId,
+    };
 
     if (
       !isNaN(monthNumber) &&
@@ -31,17 +34,19 @@ gastosRouter.get(
       const startDate = new Date(yearNumber, monthNumber - 1, 1);
       const endDate = new Date(yearNumber, monthNumber, 0, 23, 59, 59, 999); // último día del mes
 
-      dateFilter = {
-        gasto_fecha: {
-          gte: startDate,
-          lte: endDate,
-        },
+      whereClause.gasto_fecha = {
+        gte: startDate,
+        lte: endDate,
       };
+    }
+
+    if (!isNaN(presIdNumber)) {
+      whereClause.pres_id = presIdNumber;
     }
 
     try {
       const gastos = await prisma.gastos.findMany({
-        where: { usuario_id: req.userId, ...dateFilter },
+        where: whereClause,
       });
       return res.status(200).json(gastos);
     } catch (error) {
