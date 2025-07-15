@@ -1,17 +1,18 @@
 import express from "express";
 import authRouter from "./Routes/authRouter";
+import categoriaRouter from "./Routes/categoriaRouter";
 import presupuestoRouter from "./Routes/presupuestosRouter";
 import gastosRouter from "./Routes/gastosRouter";
 import periodoRouter from "./Routes/periodoRouter";
 import metasRouter from "./Routes/metasRouter";
 import dashBoardDataRouter from "./Routes/dashBoardRouter";
-import categoriaRouter from "./Routes/categoriaRouter";  
 
 const app = express();
 const port = 3000;
 
 app.use(express.json());
 app.use("/auth", authRouter);
+app.use("/categoria", categoriaRouter);
 app.use("/presupuesto", presupuestoRouter);
 app.use("/gastos", gastosRouter);
 app.use("/periodo", periodoRouter);

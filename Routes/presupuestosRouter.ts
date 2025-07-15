@@ -16,6 +16,38 @@ presupuestoRouter.get(
 
       return res.status(201).json(presupuestos);
     } catch (error) {
+      return res.status(500).json({ message: "Internal server error", error });
+    }
+  }
+);
+
+presupuestoRouter.get(
+  "/detail",
+  authenticateToken,
+  async (req: AuthRequest, res: Response) => {
+    const endDate = new Date();
+
+    try {
+      const presupuestos = await prisma.presupuestos.findMany({
+        where: { usuario_id: req.userId },
+      });
+
+      const totalPresupuestos: number[] = presupuestos.map((p) => {
+        const finRecurrencia = p.fin_recurrencia ?? new Date();
+        if (!(endDate.getMonth() < finRecurrencia.getMonth()))
+          return Number(p.pres_monto_inicial) - Number(p.pres_monto_ult);
+        return 0;
+      });
+
+      let amount = 0;
+      for (let monto of totalPresupuestos) {
+        amount += monto;
+      }
+
+      res.status(200).json({
+        amount,
+      });
+    } catch (error) {
       return res.status(500).json({ message: "Internal server error" });
     }
   }

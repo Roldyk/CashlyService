@@ -9,9 +9,44 @@ gastosRouter.get(
   "/",
   authenticateToken,
   async (req: AuthRequest, res: Response) => {
+    const { month, year, pres_id } = req.query;
+
+    const monthNumber = Number(month);
+    const yearNumber = Number(year);
+    const presIdNumber = Number(pres_id);
+
+    if (!isNaN(monthNumber) && isNaN(yearNumber)) {
+      return res
+        .status(400)
+        .json({ message: "Campo faltante como query param: year" });
+    }
+
+    const whereClause: any = {
+      usuario_id: req.userId,
+    };
+
+    if (
+      !isNaN(monthNumber) &&
+      monthNumber >= 1 &&
+      monthNumber <= 12 &&
+      !isNaN(yearNumber)
+    ) {
+      const startDate = new Date(yearNumber, monthNumber - 1, 1);
+      const endDate = new Date(yearNumber, monthNumber, 0, 23, 59, 59, 999); // último día del mes
+
+      whereClause.gasto_fecha = {
+        gte: startDate,
+        lte: endDate,
+      };
+    }
+
+    if (!isNaN(presIdNumber)) {
+      whereClause.pres_id = presIdNumber;
+    }
+
     try {
       const gastos = await prisma.gastos.findMany({
-        where: { usuario_id: req.userId },
+        where: whereClause,
       });
       return res.status(200).json(gastos);
     } catch (error) {
@@ -44,6 +79,25 @@ gastosRouter.post(
 
       if (typeof gasto_monto !== "number" || isNaN(gasto_monto))
         return res.status(400).json({ message: "Campo faltante: gasto_monto" });
+
+      if (pres_id) {
+        const presupuesto = await prisma.presupuestos.findFirst({
+          where: { usuario_id: req.userId, pres_id },
+        });
+        if (!presupuesto) {
+          return res
+            .status(404)
+            .json({ message: `Presupuesto con pres_id=${pres_id} no existe` });
+        }
+
+        const editarPresupuesto = await prisma.presupuestos.update({
+          data: {
+            pres_monto_ult:
+              Number(presupuesto.pres_monto_ult) + Number(gasto_monto),
+          },
+          where: { pres_id, usuario_id: req.userId },
+        });
+      }
 
       const nuevoGasto = await prisma.gastos.create({
         data: {
