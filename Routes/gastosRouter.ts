@@ -9,9 +9,33 @@ gastosRouter.get(
   "/",
   authenticateToken,
   async (req: AuthRequest, res: Response) => {
+    const { month, year } = req.query;
+
+    const monthNumber = Number(month);
+    const yearNumber = Number(year);
+
+    let dateFilter = {};
+
+    if (
+      !isNaN(monthNumber) &&
+      monthNumber >= 1 &&
+      monthNumber <= 12 &&
+      !isNaN(yearNumber)
+    ) {
+      const startDate = new Date(yearNumber, monthNumber - 1, 1);
+      const endDate = new Date(yearNumber, monthNumber, 0, 23, 59, 59, 999); // último día del mes
+
+      dateFilter = {
+        gasto_fecha: {
+          gte: startDate,
+          lte: endDate,
+        },
+      };
+    }
+
     try {
       const gastos = await prisma.gastos.findMany({
-        where: { usuario_id: req.userId },
+        where: { usuario_id: req.userId, ...dateFilter },
       });
       return res.status(200).json(gastos);
     } catch (error) {
