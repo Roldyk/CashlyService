@@ -6,6 +6,7 @@ import gastosRouter from "./Routes/gastosRouter";
 import periodoRouter from "./Routes/periodoRouter";
 import metasRouter from "./Routes/metasRouter";
 import dashBoardDataRouter from "./Routes/dashBoardRouter";
+import ingresoRouter from "./Routes/ingresoRouther";
 
 const app = express();
 const port = 3000;
@@ -19,6 +20,7 @@ app.use("/periodo", periodoRouter);
 app.use("/metas", metasRouter);
 app.use("/dashboard-data", dashBoardDataRouter);
 app.use("/categoria", categoriaRouter);
+app.use("/ingreso", ingresoRouter);
 
 app.get("/", (_req, res) => {
   res.send("Hello World!");
