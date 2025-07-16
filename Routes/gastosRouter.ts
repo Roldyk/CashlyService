@@ -47,8 +47,21 @@ gastosRouter.get(
     try {
       const gastos = await prisma.gastos.findMany({
         where: whereClause,
+        include: {
+          Categoria: {
+            select: {
+              categoria_nom: true,
+            },
+          },
+        },
       });
-      return res.status(200).json(gastos);
+
+      const gastosConCategoria = gastos.map((gasto) => ({
+        ...gasto,
+        categoria_nom: gasto.Categoria?.categoria_nom || null,
+        Categoria: undefined, // quitamos el objeto anidado si no lo necesitas
+      }));
+      return res.status(200).json(gastosConCategoria);
     } catch (error) {
       return res.status(500).json({ message: "Internal server error" });
     }
